@@ -1,5 +1,17 @@
 /*
-Inline Handler in JSX:
+  Task: - show a loading indicator
+     In order to show a loading indicator, one would need to introduce 
+     a new stateful value. A boolean called isLoading may be the best solution.
+
+     - When the side-effect which loads the data kicks in, set the stateful 
+     boolean to true. Once the data loaded, set the stateful boolean to 
+     false again.
+
+     - In JSX, show a "Loading ..." text conditionally when the isLoading 
+     boolean is set to true.
+
+===================================================
+Prev Task: Inline Handler in JSX:
   Task: The application renders a list of items and allows 
 its users to filter the list via a search feature. Next the 
 application should render a button next to each list item 
@@ -129,6 +141,38 @@ import Search from './house/search';
       returned values from the array are the current state (stories) 
       and the state updater function (setStories):
     */
+const initialHouses = [
+    {
+      objectID: 1,
+      address: "12 Valley of Kings, Geneva",
+      country: "Switzerland",
+      price: 900000,
+    },
+    {
+      objectID: 2,
+      address: "89 Road of Forks, Bern",
+      country: "Italy",
+      price: 500000,
+    },
+    {
+      objectID: 3,
+      address: "1053 Lake Side Drive",
+      country: "Netherlands",
+      price: 600500,
+    },
+    {
+      objectID: 4,
+      address: "1916 Rustic Oak Road",
+      country: "USA",
+      price: 600900,
+    },
+    {
+      objectID: 5,
+      address: "1256 Macapagal Road",
+      country: "Philippines",
+      price: 700900,
+    },
+  ];
 
     /* The following  is a custom hook that will store the state in a 
      local storage. useStorageState which will keep the component's 
@@ -144,7 +188,7 @@ import Search from './house/search';
         1. searchTerm renamed to 'value'
         2. setSearchTerm renamed to 'setValue'
   */
-        const useStorageState = (key, initialState) => {
+     const useStorageState = (key, initialState) => {
           const [value, setValue] = React.useState(
               localStorage.getItem('key') || initialState 
           );
@@ -159,7 +203,7 @@ import Search from './house/search';
           //the returned values are returned as an array.
           return [value, setValue]; 
       
-        } //EOF create custom hook
+      } //EOF create custom hook
     
     /* Fetching data. We start off with a function that returns a 
      promise with data in its shorthand version once it resolves. 
@@ -168,7 +212,7 @@ import Search from './house/search';
      immediately. Let's change this by giving it a bit of a realistic delay.
      When resolving the promise, delay it for 2 seconds:
    */
-     const getAsyncHouses = () =>
+    const getAsyncHouses = () =>
        new Promise((resolve) =>
        setTimeout(
          () => resolve({ data: { houses: initialHouses } }),
@@ -190,22 +234,30 @@ const App = () => {
     'search', //key
     '',  //Initial state
     );
-  console.log('Value assigned to search term is = ' + stateOfSearchComponent); 
-  console.log('Value assigned tosetSearchTerm is = ' + setSearchTerm); 
 
   /* Step 1: Since we haven't fetch the data yet, initialize the 
     state with empty array and simulate fetching these stories async. */
     const [houses, setHouses] = React.useState([]);
+
+    //Introduce another state called "isLoading" 
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    //Introduce another state called "isError"
+    const [isError, setIsError] = React.useState(false);
 
   /*Step 2: RESOLVE THE PROMISE AS A SIDE-EFECT
     We want to start off with an empty list of stories and simulate 
     fetching these stories asynchronously. In a new useEFFECT hook, call the 
     function and resolve the returned promise as a side-effect.*/
   React.useEffect(() => {
-      //remember the first parameter to useEffect is a function
-      getAsyncHouses().then(result => {
+      //remember the first parameter to useEffect are a function(s)
+      setIsLoading(true);
+      getAsyncHouses()
+       .then(result => {
          setHouses(result.data.houses);
-      });
+         setIsLoading(false);
+       }) 
+       .catch(() => setIsError(true));
     }, []); //remember second parameter is a dependency array
    
   /* Next we write event handler which removes an item from HouseList
@@ -262,13 +314,21 @@ const App = () => {
        isFocused //pass imperatively a dedicated  prop. isFocused as an attribute is equivalent to isFocused={true}
        onInputChange={handleSearch}
       >
-       <strong>Search with 2 sec delay:</strong>
+       <strong>Search with 1 sec delay:</strong>
       </Search>
       <br></br>
-     <HouseList list={searchedHouses} 
-                onRemoveHouse={handleRemoveHouse} 
-                onAddHouse={handleAddHouse} 
-                setHouses = {setHouses}/>  
+
+      {isError && <p>Error in fetching data...</p>}
+
+      {isLoading ? (
+        <p> Loading Data...</p>
+      ):
+       <HouseList list={searchedHouses} 
+                   onRemoveHouse={handleRemoveHouse} 
+                   onAddHouse={handleAddHouse} 
+                   setHouses = {setHouses}/>  
+      }
+    
     </>
  )
 }
